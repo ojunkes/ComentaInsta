@@ -1,27 +1,35 @@
-from time import sleep
+from datetime import datetime
 from random import randint
 from selenium import webdriver
+from time import sleep
 
 # CONFIGURAÇÕES PARA APLICAÇÃO
-page_comment = "https://www.instagram.com/kellyjunkes/"
-comments = ["@josecarlosklock", "@teste"]
+page_comment = "https://www.instagram.com/p/CC9oAeqFrO3/"
+comments = ["@josecarlosklock",
+            "@kellyjunkes",
+            "@andrew_drums76",
+            "@jksandressa",
+            "@drijunkes_",
+            "@junkesmarly",
+            "@jeeduardaklock"]
+number_comments = 3
 user = "ojunkespro"
 password = "Aa123456"
 browser = ''
 
 
 def access_instagram():
-    print("Acessando Instagram")
+    console_log(True, "Acessando Instagram")
     try:
         browser.get("http://www.instagram.com/")
-    except e:
-        print(e)
+    except ValueError as err:
+        print(err)
         return False
     return True
 
 
 def login_instagram():
-    print(f"Efetuando Login com usuário: {user}")
+    console_log(True, f"Efetuando Login com usuário: {user}")
     try:
         field_user = browser.find_element_by_css_selector("input[name='username']")
         field_password = browser.find_element_by_css_selector("input[name='password")
@@ -31,31 +39,32 @@ def login_instagram():
         button_login = browser.find_element_by_xpath("//button[@type='submit']")
         button_login.click()
         sleep(2)
-    except e:
-        print(e)
+    except ValueError as err:
+        print(err)
         return False
     return True
 
 
 def close_messages():
-    print("Fechando Mensagens de Confirmação do Instagram")
+    console_log(True, "Fechando Mensagens de Confirmação")
     for i in range(2):
-        print(f" Fechando Mensagen de Confirmação do Instagram nº {i+1}")
+        console_log(False, f"Fechando Mensage nº {i+1}")
         try:
             button_not_now = browser.find_element_by_xpath("//button[text()='Agora não']")
             if button_not_now:
                 button_not_now.click()
             sleep(3)
-        except e:
-            print(e)
+        except ValueError as err:
+            print(err)
             return False
     return True
 
 
 def access_page_comment():
-    print("Acessando Página de Comentário")
+    console_log(True, "Acessando Página de Comentário")
     browser.get(page_comment)
     """
+    browser.get("https://www.instagram.com/kellyjunkes/")
     print("Pesquisar")
     campo_pesquisa = browser.find_element_by_xpath("//input[@placeholder='Pesquisar']")
     campo_pesquisa.send_keys('kellyjunkes')
@@ -63,18 +72,31 @@ def access_page_comment():
     sleep(5)
     print("Vai clicar")
     campo_pesquisa = browser.find_element_by_xpath("//span[text()='Kelly Karoline Klock Junkes']")
-    campo_pesquisa.click()
+    campo_pesquisa.click()    
+    sleep(2)
+    print("clicar foto")
+    captura_foto = browser.find_element_by_xpath("//div/article/div/div/div/div/a[1]")
+    captura_foto.click()
+    sleep(3)
     """
 
 
+def console_log(stage, message):
+    if stage:
+        print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - {message}")
+    else:
+        print(f" =>{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - {message}")
+
+
 def type_like_a_person(text, single_input_field):
-    print("Escrevendo o Comentário")
+    console_log(False, f"Escrevendo o Comentário: {text}")
     for letter in text:
         single_input_field.send_keys(letter)
-        sleep(randint(1, 5) / 30)
+        sleep(randint(1, 5) / 10)
 
 
 # INICIO DA EXECUÇÃO
+console_log(True, "Abrindo navegador")
 browser = webdriver.Chrome()
 browser.implicitly_wait(5)
 
@@ -86,20 +108,17 @@ close_messages()
 sleep(2)
 access_page_comment()
 
+console_log(True, "Iniciando a publicação de comentários")
+for x in range(number_comments):
+    console_log(False, f"Comentário de número: {x+1}")
+    sleep(randint(2, 10))
+    browser.find_element_by_class_name('Ypffh').click()
+    campo_comentario = browser.find_element_by_class_name('Ypffh')
+    type_like_a_person(comments[randint(0, len(comments)-1)], campo_comentario)
+    """
+    browser.find_element_by_xpath("//button[contains(text(), 'Publicar')]").click()
+    """
 
-print("clicar foto")
-captura_foto = browser.find_element_by_xpath("//div/article/div/div/div/div/a[1]")
-captura_foto.click()
-sleep(3)
-
-print("Comentando...")
-browser.find_element_by_class_name('Ypffh').click()
-campo_comentario = browser.find_element_by_class_name('Ypffh')
-type_like_a_person("@josecarlosklock", campo_comentario)
-'''
-browser.find_element_by_xpath("//button[contains(text(), 'Publicar')]").click()
-'''
-sleep(20)
-
+console_log(True, f"Finalizou com Sucesso!")
+sleep(10)
 browser.close()
-
