@@ -1,29 +1,48 @@
+import ast
+from csv import reader
 from datetime import datetime
 from random import randint
 from selenium import webdriver
 from time import sleep
 
-# CONFIGURAÇÕES PARA APLICAÇÃO
-page_comment = "https://www.instagram.com/p/CC9oAeqFrO3/"
-comments = ["@josecarlosklock",
-            "@kellyjunkes",
-            "@andrew_drums76",
-            "@jksandressa",
-            "@drijunkes_",
-            "@junkesmarly",
-            "@jeeduardaklock"]
-number_comments = 3
-user = "ojunkespro"
-password = "Aa123456"
-browser = ''
+page_comment = ""
+comments = []
+number_comments = 0
+between_schedules = []
+user = ""
+password = ""
+
+
+def get_params():
+    global user
+    global password
+    global page_comment
+    global comments
+    global number_comments
+    global between_schedules
+    with open("ComentaInsta.ini", "r") as text_file:
+        parameters = reader(text_file, delimiter='=')
+        for parameter in parameters:
+            if parameter[0] == "user":
+                user = ''.join(parameter[1].rsplit('\n'))
+            elif parameter[0] == "password":
+                password = ''.join(parameter[1].rsplit('\n'))
+            elif parameter[0] == "page_comment":
+                page_comment = ''.join(parameter[1].rsplit('\n'))
+            elif parameter[0] == "comments":
+                comments = ''.join(parameter[1].rsplit('\n')).split(",")
+            elif parameter[0] == "number_comments":
+                number_comments = int(''.join(parameter[1].rsplit('\n')))
+            elif parameter[0] == "between_schedules":
+                between_schedules = ast.literal_eval('[%s]' % parameter[1])
 
 
 def access_instagram():
     console_log(True, "Acessando Instagram")
     try:
         browser.get("http://www.instagram.com/")
-    except ValueError as err:
-        print(err)
+    except ValueError as e:
+        print(e)
         return False
     return True
 
@@ -39,8 +58,8 @@ def login_instagram():
         button_login = browser.find_element_by_xpath("//button[@type='submit']")
         button_login.click()
         sleep(2)
-    except ValueError as err:
-        print(err)
+    except ValueError as e:
+        print(e)
         return False
     return True
 
@@ -48,14 +67,14 @@ def login_instagram():
 def close_messages():
     console_log(True, "Fechando Mensagens de Confirmação")
     for i in range(2):
-        console_log(False, f"Fechando Mensage nº {i+1}")
+        console_log(False, f"Fechando Mensage nº {i + 1}")
         try:
             button_not_now = browser.find_element_by_xpath("//button[text()='Agora não']")
             if button_not_now:
                 button_not_now.click()
             sleep(3)
-        except ValueError as err:
-            print(err)
+        except ValueError as e:
+            print(e)
             return False
     return True
 
@@ -96,6 +115,8 @@ def type_like_a_person(text, single_input_field):
 
 
 # INICIO DA EXECUÇÃO
+console_log(True, "Buscando Parâmetros")
+get_params()
 console_log(True, "Abrindo navegador")
 browser = webdriver.Chrome()
 browser.implicitly_wait(5)
@@ -108,17 +129,27 @@ close_messages()
 sleep(2)
 access_page_comment()
 
+# FAZER O QUE VIEMOS FAZER, COMENTAR!!!!!
 console_log(True, "Iniciando a publicação de comentários")
-for x in range(number_comments):
-    console_log(False, f"Comentário de número: {x+1}")
-    sleep(randint(2, 10))
-    browser.find_element_by_class_name('Ypffh').click()
-    campo_comentario = browser.find_element_by_class_name('Ypffh')
-    type_like_a_person(comments[randint(0, len(comments)-1)], campo_comentario)
-    """
-    browser.find_element_by_xpath("//button[contains(text(), 'Publicar')]").click()
-    """
+x = 0
+while x < number_comments:
+    time_now = int(datetime.now().strftime('%H%M'))
+    for time in between_schedules:
+        if time[0] <= time_now <= time[1]:
+            while time_now <= time[1] and x < number_comments:
+                try:
+                    console_log(False, f"Comentário de número: {x + 1}")
+                    sleep(randint(2, 10))
+                    browser.find_element_by_class_name('Ypffh').click()
+                    comment_field = browser.find_element_by_class_name('Ypffh')
+                    type_like_a_person(comments[randint(0, len(comments) - 1)], comment_field)
+                    #browser.find_element_by_xpath("//button[contains(text(), 'Publicar')]").click()
+                    x += 1
+                except ValueError as err:
+                    print(err)
+                    x = number_comments
+                    break
 
 console_log(True, f"Finalizou com Sucesso!")
-sleep(10)
 browser.close()
+input("Enter para fechar")
