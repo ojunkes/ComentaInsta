@@ -35,6 +35,13 @@ def get_params():
                 number_comments = int(''.join(parameter[1].rsplit('\n')))
             elif parameter[0] == "between_schedules":
                 between_schedules = ast.literal_eval('[%s]' % parameter[1])
+    console_log(False, f"Usuário: {user}")
+    if not password.isspace():
+        console_log(False, f"Senha: ********")
+    console_log(False, f"Página de comentário: {page_comment}")
+    console_log(False, f"Comentário(s): {comments}")
+    console_log(False, f"Número de comentário(s): {number_comments}")
+    console_log(False, f"Executar entre horários: {between_schedules}")
 
 
 def access_instagram():
@@ -67,7 +74,7 @@ def login_instagram():
 def close_messages():
     console_log(True, "Fechando Mensagens de Confirmação")
     for i in range(2):
-        console_log(False, f"Fechando Mensage nº {i + 1}")
+        console_log(False, f"Fechando Mensagem nº {i + 1}")
         try:
             button_not_now = browser.find_element_by_xpath("//button[text()='Agora não']")
             if button_not_now:
@@ -107,8 +114,9 @@ def console_log(stage, message):
         print(f" =>{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - {message}")
 
 
-def type_like_a_person(text, single_input_field):
-    console_log(False, f"Escrevendo o Comentário: {text}")
+def type_like_a_person(comment_number, text, single_input_field):
+    console_log(False, f"{str(comment_number).zfill(len(str(number_comments)))}/{number_comments} - " +
+                f"{str((comment_number * 100) / number_comments).zfill(5)}% - Comentário: {text}")
     for letter in text:
         single_input_field.send_keys(letter)
         sleep(randint(1, 5) / 10)
@@ -130,25 +138,35 @@ sleep(2)
 access_page_comment()
 
 # FAZER O QUE VIEMOS FAZER, COMENTAR!!!!!
+print("=============================================================")
 console_log(True, "Iniciando a publicação de comentários")
 x = 0
 while x < number_comments:
-    time_now = int(datetime.now().strftime('%H%M'))
+    schedule = False
     for time in between_schedules:
-        if time[0] <= time_now <= time[1]:
-            while time_now <= time[1] and x < number_comments:
+        time_now = int(datetime.now().strftime('%H%M'))
+        if time[0] <= time_now < time[1]:
+            console_log(False, "Abriu horário de comentários: " +
+                        f"{'%s%s:%s%s' % tuple(str(time[0]).zfill(4))} " +
+                        f"até {'%s%s:%s%s' % tuple(str(time[1]).zfill(4))}")
+            schedule = True
+            while time_now < time[1] and x < number_comments:
                 try:
-                    console_log(False, f"Comentário de número: {x + 1}")
-                    sleep(randint(2, 10))
                     browser.find_element_by_class_name('Ypffh').click()
                     comment_field = browser.find_element_by_class_name('Ypffh')
-                    type_like_a_person(comments[randint(0, len(comments) - 1)], comment_field)
+                    type_like_a_person(x + 1, comments[randint(0, len(comments) - 1)], comment_field)
                     #browser.find_element_by_xpath("//button[contains(text(), 'Publicar')]").click()
+                    sleep(randint(1, 5))
+                    time_now = int(datetime.now().strftime('%H%M'))
                     x += 1
                 except ValueError as err:
                     print(err)
                     x = number_comments
                     break
+    if not schedule:
+        console_log(False, "Fora do horário de trabalho, aguardar 1 minuto para próxima tentativa!")
+        sleep(60)
+
 
 console_log(True, f"Finalizou com Sucesso!")
 browser.close()
