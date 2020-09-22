@@ -1,0 +1,1 @@
+pyinstaller main.py --onefile --icon=ComentaInsta.ico -n ComentaInsta

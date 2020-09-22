@@ -119,7 +119,7 @@ def type_like_a_person(comment_number, text, single_input_field):
                 f"{str((comment_number * 100) / number_comments).zfill(5)}% - Comentário: {text}")
     for letter in text:
         single_input_field.send_keys(letter)
-        sleep(randint(1, 5) / 10)
+        sleep(randint(1, 4) / 10)
 
 
 # INICIO DA EXECUÇÃO
@@ -155,8 +155,8 @@ while x < number_comments:
                     browser.find_element_by_class_name('Ypffh').click()
                     comment_field = browser.find_element_by_class_name('Ypffh')
                     type_like_a_person(x + 1, comments[randint(0, len(comments) - 1)], comment_field)
-                    #browser.find_element_by_xpath("//button[contains(text(), 'Publicar')]").click()
-                    sleep(randint(1, 5))
+                    browser.find_element_by_xpath("//button[contains(text(), 'Publicar')]").click()
+                    sleep(randint(3, 8))
                     time_now = int(datetime.now().strftime('%H%M'))
                     x += 1
                 except ValueError as err:
