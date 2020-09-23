@@ -154,6 +154,38 @@ def comment():
             sleep(60)
 
 
+def comment2():
+    print("=============================================================")
+    console_log(True, "Iniciando a publicação de comentários")
+    x = 0
+    while x < number_comments:
+        schedule = False
+        for time in between_schedules:
+            time_now = int(datetime.now().strftime('%H%M'))
+            if time[0] <= time_now < time[1]:
+                console_log(False, "Abriu horário de comentários: " +
+                            f"{'%s%s:%s%s' % tuple(str(time[0]).zfill(4))} " +
+                            f"até {'%s%s:%s%s' % tuple(str(time[1]).zfill(4))}")
+                schedule = True
+                while time_now < time[1] and x < number_comments:
+                    access_page_comment()
+                    try:
+                        browser.find_element_by_class_name('Ypffh').click()
+                        comment_field = browser.find_element_by_class_name('Ypffh')
+                        type_like_a_person(x + 1, comments[randint(0, len(comments) - 1)], comment_field)
+                        browser.find_element_by_xpath("//button[contains(text(), 'Publicar')]").click()
+                        sleep(randint(60, 70))
+                        time_now = int(datetime.now().strftime('%H%M'))
+                        x += 1
+                    except ValueError as err:
+                        print(err)
+                        x = number_comments
+                        break
+        if not schedule:
+            console_log(False, "Fora do horário de trabalho, aguardar 1 minuto para próxima tentativa!")
+            sleep(60)
+
+
 def console_log(stage, message):
     if stage:
         print(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - {message}")
@@ -184,7 +216,8 @@ close_messages()
 sleep(2)
 access_page_comment()
 sleep(2)
-comment()
+#comment()
+comment2()
 
 console_log(True, f"Finalizou com Sucesso!")
 browser.close()
