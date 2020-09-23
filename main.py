@@ -5,6 +5,7 @@ from random import randint
 from selenium import webdriver
 from time import sleep
 
+
 page_comment = ""
 comments = []
 number_comments = 0
@@ -89,22 +90,68 @@ def close_messages():
 def access_page_comment():
     console_log(True, "Acessando Página de Comentário")
     browser.get(page_comment)
-    """
-    browser.get("https://www.instagram.com/kellyjunkes/")
-    print("Pesquisar")
-    campo_pesquisa = browser.find_element_by_xpath("//input[@placeholder='Pesquisar']")
-    campo_pesquisa.send_keys('kellyjunkes')
-    campo_pesquisa.send_keys(keys.ENTER)
-    sleep(5)
-    print("Vai clicar")
-    campo_pesquisa = browser.find_element_by_xpath("//span[text()='Kelly Karoline Klock Junkes']")
-    campo_pesquisa.click()    
-    sleep(2)
-    print("clicar foto")
-    captura_foto = browser.find_element_by_xpath("//div/article/div/div/div/div/a[1]")
-    captura_foto.click()
-    sleep(3)
-    """
+
+def access_page_secondary():
+    console_log(True, "Acessando Página Secundária")
+    #campo_pesquisa = browser.find_element_by_xpath("//input[@placeholder='Pesquisar']")
+    if (randint(1, 6) % 2) == 0:
+        browser.get("https://www.instagram.com/kellyjunkes/")
+        #campo_pesquisa.send_keys('kellyjunkes')
+        #campo_pesquisa.send_keys(keys.ENTER)
+        #sleep(5)
+        #campo_pesquisa = browser.find_element_by_xpath("//span[text()='Kelly Karoline Klock Junkes']")
+        #campo_pesquisa.click()
+        sleep(2)
+        captura_foto = browser.find_element_by_xpath("//div/article/div/div/div/div/a[1]")
+        captura_foto.click()
+        sleep(3)
+    else:
+        browser.get("https://www.instagram.com/drijunkes_/")
+        #campo_pesquisa.send_keys('jksandressa')
+        #campo_pesquisa.send_keys(keys.ENTER)
+        #sleep(5)
+        #campo_pesquisa = browser.find_element_by_xpath("//span[text()='Andressa']")
+        #campo_pesquisa.click()
+        sleep(2)
+        captura_foto = browser.find_element_by_xpath("//div/article/div/div/div/div/a[1]")
+        captura_foto.click()
+        sleep(3)
+
+
+def comment():
+    print("=============================================================")
+    console_log(True, "Iniciando a publicação de comentários")
+    x = 0
+    while x < number_comments:
+        schedule = False
+        for time in between_schedules:
+            time_now = int(datetime.now().strftime('%H%M'))
+            if time[0] <= time_now < time[1]:
+                console_log(False, "Abriu horário de comentários: " +
+                            f"{'%s%s:%s%s' % tuple(str(time[0]).zfill(4))} " +
+                            f"até {'%s%s:%s%s' % tuple(str(time[1]).zfill(4))}")
+                schedule = True
+                while time_now < time[1] and x < number_comments:
+
+                    if (randint(1, 6) % 2) == 0:
+                        access_page_secondary()
+                    else:
+                        access_page_comment()
+                        try:
+                            browser.find_element_by_class_name('Ypffh').click()
+                            comment_field = browser.find_element_by_class_name('Ypffh')
+                            type_like_a_person(x + 1, comments[randint(0, len(comments) - 1)], comment_field)
+                            browser.find_element_by_xpath("//button[contains(text(), 'Publicar')]").click()
+                            sleep(randint(5, 20))
+                            time_now = int(datetime.now().strftime('%H%M'))
+                            x += 1
+                        except ValueError as err:
+                            print(err)
+                            x = number_comments
+                            break
+        if not schedule:
+            console_log(False, "Fora do horário de trabalho, aguardar 1 minuto para próxima tentativa!")
+            sleep(60)
 
 
 def console_log(stage, message):
@@ -136,37 +183,8 @@ sleep(2)
 close_messages()
 sleep(2)
 access_page_comment()
-
-# FAZER O QUE VIEMOS FAZER, COMENTAR!!!!!
-print("=============================================================")
-console_log(True, "Iniciando a publicação de comentários")
-x = 0
-while x < number_comments:
-    schedule = False
-    for time in between_schedules:
-        time_now = int(datetime.now().strftime('%H%M'))
-        if time[0] <= time_now < time[1]:
-            console_log(False, "Abriu horário de comentários: " +
-                        f"{'%s%s:%s%s' % tuple(str(time[0]).zfill(4))} " +
-                        f"até {'%s%s:%s%s' % tuple(str(time[1]).zfill(4))}")
-            schedule = True
-            while time_now < time[1] and x < number_comments:
-                try:
-                    browser.find_element_by_class_name('Ypffh').click()
-                    comment_field = browser.find_element_by_class_name('Ypffh')
-                    type_like_a_person(x + 1, comments[randint(0, len(comments) - 1)], comment_field)
-                    browser.find_element_by_xpath("//button[contains(text(), 'Publicar')]").click()
-                    sleep(randint(3, 8))
-                    time_now = int(datetime.now().strftime('%H%M'))
-                    x += 1
-                except ValueError as err:
-                    print(err)
-                    x = number_comments
-                    break
-    if not schedule:
-        console_log(False, "Fora do horário de trabalho, aguardar 1 minuto para próxima tentativa!")
-        sleep(60)
-
+sleep(2)
+comment()
 
 console_log(True, f"Finalizou com Sucesso!")
 browser.close()
