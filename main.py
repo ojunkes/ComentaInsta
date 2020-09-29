@@ -5,39 +5,35 @@ from random import randint
 from selenium import webdriver
 from time import sleep
 
-#ComentaInsta.ini
+# ComentaInsta.ini
 from selenium.common.exceptions import ElementClickInterceptedException
 
+logins = []
 page_comment = ""
 comments = []
 total_comments = 0
 time_between_comments = 120
-#between_schedules = []
-user = ""
-password = ""
 
-#Global Variables
+# Global Variables
 number_comments = 0
 error_click = False
 database = 'ComentaInsta.db'
+login_contol = 0
+login_user = ''
 
 
 def get_params():
     console_log(True, "Buscando Parâmetros")
-    global user
-    global password
+    global logins
     global page_comment
     global comments
     global total_comments
     global time_between_comments
-    global between_schedules
     with open("ComentaInsta.ini", "r") as text_file:
         parameters = reader(text_file, delimiter='=')
         for parameter in parameters:
-            if parameter[0] == "user":
-                user = ''.join(parameter[1].rsplit('\n'))
-            elif parameter[0] == "password":
-                password = ''.join(parameter[1].rsplit('\n'))
+            if parameter[0] == "logins":
+                logins = ast.literal_eval('[%s]' % parameter[1])
             elif parameter[0] == "page_comment":
                 page_comment = ''.join(parameter[1].rsplit('\n'))
             elif parameter[0] == "comments":
@@ -46,16 +42,15 @@ def get_params():
                 total_comments = int(''.join(parameter[1].rsplit('\n')))
             elif parameter[0] == "time_between_comments":
                 time_between_comments = int(''.join(parameter[1].rsplit('\n')))
-            #elif parameter[0] == "between_schedules":
-                #between_schedules = ast.literal_eval('[%s]' % parameter[1])
-    console_log(False, f"Usuário: {user}")
-    if not password.isspace():
-        console_log(False, f"Senha: ********")
+    for i in range(len(logins)):
+        console_log(False, f"Login ({i + 1})")
+        console_log(False, f"Usuário: {logins[i][0]}")
+        if not str.isspace(logins[i][1]):
+            console_log(False, "Senha: ********")
     console_log(False, f"Página de comentário: {page_comment}")
     console_log(False, f"Comentário(s): {comments}")
     console_log(False, f"Total de comentário(s): {total_comments}")
     console_log(False, f"Tempo entre comentário: {time_between_comments}")
-    #console_log(False, f"Executar entre horários: {between_schedules}")
 
 
 def read_number_comment():
@@ -83,11 +78,20 @@ def access_instagram():
 
 
 def login_instagram():
+    global login_contol
+    global login_user
     try:
         field_user = browser.find_element_by_css_selector("input[name='username']")
         field_password = browser.find_element_by_css_selector("input[name='password")
-        field_user.send_keys(user)
-        field_password.send_keys(password)
+        if error_click is True:
+            console_log(True, "Campo comentário DISABILITADO, mudando de login!")
+            login_contol += 1
+        if login_contol > (len(logins) - 1):
+            login_contol = 0
+        console_log(True, f"Login com usuário: {logins[login_contol][0]}")
+        login_user = logins[login_contol][0]
+        field_user.send_keys(logins[login_contol][0])
+        field_password.send_keys(logins[login_contol][1])
         sleep(2)
         button_login = browser.find_element_by_xpath("//button[@type='submit']")
         button_login.click()
@@ -106,6 +110,7 @@ def comment():
     global number_comments
     global error_click
     global time_between_comments
+    global login_user
     print("=============================================================")
     number_comments_cicle = 0
     number_limit_comments = randint(20, 70)
@@ -118,7 +123,12 @@ def comment():
         try:
             browser.find_element_by_class_name('Ypffh').click()
             comment_field = browser.find_element_by_class_name('Ypffh')
-            type_like_a_person(number_comments + 1, loaded_page, comments[randint(0, len(comments) - 1)], comment_field)
+            text = ''
+            while text == '':
+                text = comments[randint(0, len(comments) - 1)]
+                if login_user in text:
+                    text = ''
+            type_like_a_person(number_comments + 1, loaded_page, text, comment_field)
             browser.find_element_by_xpath("//button[contains(text(), 'Publicar')]").click()
         except ValueError as err:
             print(f"Exceção(ValueError): {err}")
@@ -163,7 +173,6 @@ def type_like_a_person(comment_number, loaded_page, text, single_input_field):
 # INICIO DA EXECUÇÃO
 get_params()
 number_comments = read_number_comment()
-
 while number_comments < total_comments:
     console_log(True, "Abrindo navegador")
     browser = webdriver.Chrome()
@@ -171,15 +180,12 @@ while number_comments < total_comments:
     console_log(True, "Acessando Instagram")
     access_instagram()
     sleep(5)
-    console_log(True, f"Efetuando Login com usuário: {user}")
+    console_log(True, f"Efetuando Login")
     login_instagram()
     sleep(2)
     console_log(True, f"Efetuando Comentários")
     error_click = False
     comment()
-    if error_click is True:
-        console_log(False, "Comentário DESABILITADO, aguardar 1 hora...")
-        sleep(3600)
     console_log(True, f"Fechando browser")
     browser.close()
     sleep(2)
