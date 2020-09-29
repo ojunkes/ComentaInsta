@@ -6,15 +6,20 @@ from selenium import webdriver
 from time import sleep
 
 #ComentaInsta.ini
+from selenium.common.exceptions import ElementClickInterceptedException
+
 page_comment = ""
 comments = []
 total_comments = 0
-between_schedules = []
+time_between_comments = 120
+#between_schedules = []
 user = ""
 password = ""
 
 #Global Variables
 number_comments = 0
+error_click = False
+database = 'ComentaInsta.db'
 
 
 def get_params():
@@ -24,6 +29,7 @@ def get_params():
     global page_comment
     global comments
     global total_comments
+    global time_between_comments
     global between_schedules
     with open("ComentaInsta.ini", "r") as text_file:
         parameters = reader(text_file, delimiter='=')
@@ -38,15 +44,33 @@ def get_params():
                 comments = ''.join(parameter[1].rsplit('\n')).split(",")
             elif parameter[0] == "total_comments":
                 total_comments = int(''.join(parameter[1].rsplit('\n')))
-            elif parameter[0] == "between_schedules":
-                between_schedules = ast.literal_eval('[%s]' % parameter[1])
+            elif parameter[0] == "time_between_comments":
+                time_between_comments = int(''.join(parameter[1].rsplit('\n')))
+            #elif parameter[0] == "between_schedules":
+                #between_schedules = ast.literal_eval('[%s]' % parameter[1])
     console_log(False, f"Usuário: {user}")
     if not password.isspace():
         console_log(False, f"Senha: ********")
     console_log(False, f"Página de comentário: {page_comment}")
     console_log(False, f"Comentário(s): {comments}")
-    console_log(False, f"Número de comentário(s): {number_comments}")
+    console_log(False, f"Total de comentário(s): {total_comments}")
+    console_log(False, f"Tempo entre comentário: {time_between_comments}")
     #console_log(False, f"Executar entre horários: {between_schedules}")
+
+
+def read_number_comment():
+    console_log(True, "Buscando Total de Comentários já realizados")
+    global database
+    amount = 0
+    try:
+        with open(database, "r") as text_file:
+            text = text_file.read()
+            if text != '':
+                amount = int(text)
+    except FileNotFoundError:
+        console_log(False, f"Arquivo não existe")
+    console_log(False, f"Qtd. Total: {amount}")
+    return amount
 
 
 def access_instagram():
@@ -78,46 +102,16 @@ def access_page_comment():
     browser.get(page_comment)
 
 
-def comment_v1():
-    print("=============================================================")
-    console_log(True, "Iniciando a publicação de comentários")
-    x = 0
-    while x < total_comments:
-        schedule = False
-        for time in between_schedules:
-            time_now = int(datetime.now().strftime('%H%M'))
-            if time[0] <= time_now < time[1]:
-                console_log(False, "Abriu horário de comentários: " +
-                            f"{'%s%s:%s%s' % tuple(str(time[0]).zfill(4))} " +
-                            f"até {'%s%s:%s%s' % tuple(str(time[1]).zfill(4))}")
-                schedule = True
-                while time_now < time[1] and x < total_comments:
-                    access_page_comment()
-                    sleep(2)
-                    try:
-                        browser.find_element_by_class_name('Ypffh').click()
-                        comment_field = browser.find_element_by_class_name('Ypffh')
-                        type_like_a_person(x + 1, comments[randint(0, len(comments) - 1)], comment_field)
-                        #browser.find_element_by_xpath("//button[contains(text(), 'Publicar')]").click()
-                        sleep(randint(60, 70))
-                        time_now = int(datetime.now().strftime('%H%M'))
-                        x += 1
-                    except ValueError as err:
-                        print(err)
-                        break
-        if not schedule:
-            console_log(False, "Fora do horário de trabalho, aguardar 1 minuto para próxima tentativa!")
-            sleep(60)
-
-
-def comment_v2():
+def comment():
     global number_comments
+    global error_click
+    global time_between_comments
     print("=============================================================")
     number_comments_cicle = 0
     number_limit_comments = randint(20, 70)
     while number_comments_cicle < number_limit_comments:
         loaded_page = False
-        if randint(2, 6) % 2 == 0 or number_comments_cicle == 0:
+        if randint(2, 6) % 2 == 0 or number_comments_cicle == 0 or error_click is True:
             loaded_page = True
             access_page_comment()
             sleep(3)
@@ -126,12 +120,25 @@ def comment_v2():
             comment_field = browser.find_element_by_class_name('Ypffh')
             type_like_a_person(number_comments + 1, loaded_page, comments[randint(0, len(comments) - 1)], comment_field)
             browser.find_element_by_xpath("//button[contains(text(), 'Publicar')]").click()
-            sleep(randint(40, 80))
-            number_comments += 1
         except ValueError as err:
-            print(err)
+            print(f"Exceção(ValueError): {err}")
             break
+        except ElementClickInterceptedException as err:
+            error_click = True
+            print(f"Exceção(ElementClickInterceptedException): {err}")
+            break
+        number_comments += 1
+        write_number_comment()
+        sleep(randint(time_between_comments, time_between_comments + 10))
         number_comments_cicle += 1
+
+
+def write_number_comment():
+    global database
+    global number_comments
+    text_file = open(database, "w+")
+    text_file.write(str(number_comments))
+    text_file.close()
 
 
 def console_log(stage, message):
@@ -155,6 +162,7 @@ def type_like_a_person(comment_number, loaded_page, text, single_input_field):
 
 # INICIO DA EXECUÇÃO
 get_params()
+number_comments = read_number_comment()
 
 while number_comments < total_comments:
     console_log(True, "Abrindo navegador")
@@ -167,7 +175,11 @@ while number_comments < total_comments:
     login_instagram()
     sleep(2)
     console_log(True, f"Efetuando Comentários")
-    comment_v2()
+    error_click = False
+    comment()
+    if error_click is True:
+        console_log(False, "Comentário DESABILITADO, aguardar 1 hora...")
+        sleep(3600)
     console_log(True, f"Fechando browser")
     browser.close()
     sleep(2)
