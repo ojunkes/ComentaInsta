@@ -13,12 +13,13 @@ page_comment = ""
 comments = []
 total_comments = 0
 time_between_comments = 120
+total_comments_change_login = 60
 
 # Global Variables
 number_comments = 0
 error_click = False
 database = 'ComentaInsta.db'
-login_contol = 0
+login_control = 0
 login_user = ''
 
 
@@ -29,6 +30,7 @@ def get_params():
     global comments
     global total_comments
     global time_between_comments
+    global total_comments_change_login
     with open("ComentaInsta.ini", "r") as text_file:
         parameters = reader(text_file, delimiter='=')
         for parameter in parameters:
@@ -42,6 +44,8 @@ def get_params():
                 total_comments = int(''.join(parameter[1].rsplit('\n')))
             elif parameter[0] == "time_between_comments":
                 time_between_comments = int(''.join(parameter[1].rsplit('\n')))
+            elif parameter[0] == "total_comments_change_login":
+                total_comments_change_login = int(''.join(parameter[1].rsplit('\n')))
     for i in range(len(logins)):
         console_log(False, f"Login ({i + 1})")
         console_log(False, f"Usuário: {logins[i][0]}")
@@ -51,6 +55,7 @@ def get_params():
     console_log(False, f"Comentário(s): {comments}")
     console_log(False, f"Total de comentário(s): {total_comments}")
     console_log(False, f"Tempo entre comentário: {time_between_comments}")
+    console_log(False, f"Total comentários para mudar login: {total_comments_change_login}")
 
 
 def read_number_comment():
@@ -78,20 +83,20 @@ def access_instagram():
 
 
 def login_instagram():
-    global login_contol
+    global login_control
     global login_user
     try:
         field_user = browser.find_element_by_css_selector("input[name='username']")
         field_password = browser.find_element_by_css_selector("input[name='password")
         if error_click is True:
             console_log(True, "Campo comentário DISABILITADO, mudando de login!")
-            login_contol += 1
-        if login_contol > (len(logins) - 1):
-            login_contol = 0
-        console_log(True, f"Login com usuário: {logins[login_contol][0]}")
-        login_user = logins[login_contol][0]
-        field_user.send_keys(logins[login_contol][0])
-        field_password.send_keys(logins[login_contol][1])
+        login_control += 1
+        if login_control > (len(logins) - 1):
+            login_control = 0
+        console_log(True, f"Login com usuário: {logins[login_control][0]}")
+        login_user = logins[login_control][0]
+        field_user.send_keys(logins[login_control][0])
+        field_password.send_keys(logins[login_control][1])
         sleep(2)
         button_login = browser.find_element_by_xpath("//button[@type='submit']")
         button_login.click()
@@ -116,7 +121,8 @@ def comment():
     number_limit_comments = randint(20, 70)
     while number_comments_cicle < number_limit_comments:
         loaded_page = False
-        if randint(2, 6) % 2 == 0 or number_comments_cicle == 0 or error_click is True:
+        #if randint(2, 6) % 2 == 0 or number_comments_cicle == 0 or error_click is True:
+        if number_comments_cicle == 0:
             loaded_page = True
             access_page_comment()
             sleep(3)
@@ -131,16 +137,22 @@ def comment():
             type_like_a_person(number_comments + 1, loaded_page, text, comment_field)
             browser.find_element_by_xpath("//button[contains(text(), 'Publicar')]").click()
         except ValueError as err:
+            number_comments -= 1    # Considerando que o comentário anterior também deu erro
+            write_number_comment()
             print(f"Exceção(ValueError): {err}")
             break
         except ElementClickInterceptedException as err:
             error_click = True
+            number_comments -= 1    # Considerando que o comentário anterior também deu erro
+            write_number_comment()
             print(f"Exceção(ElementClickInterceptedException): {err}")
             break
         number_comments += 1
         write_number_comment()
         sleep(randint(time_between_comments, time_between_comments + 10))
         number_comments_cicle += 1
+        if number_comments_cicle > total_comments_change_login:
+            break
 
 
 def write_number_comment():
