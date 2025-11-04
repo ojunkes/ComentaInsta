@@ -2,6 +2,7 @@ import ast
 from csv import reader
 from datetime import datetime
 from random import randint
+from selenium.webdriver.common.by import By
 from selenium import webdriver
 from time import sleep
 
@@ -86,8 +87,8 @@ def login_instagram():
     global login_control
     global login_user
     try:
-        field_user = browser.find_element_by_css_selector("input[name='username']")
-        field_password = browser.find_element_by_css_selector("input[name='password")
+        field_user = browser.find_element(By.CSS_SELECTOR, "input[name='username']")
+        field_password = browser.find_element(By.CSS_SELECTOR, "input[name='password")
         if error_click is True:
             console_log(True, "Campo comentário DISABILITADO, mudando de login!")
         login_control += 1
@@ -98,7 +99,7 @@ def login_instagram():
         field_user.send_keys(logins[login_control][0])
         field_password.send_keys(logins[login_control][1])
         sleep(2)
-        button_login = browser.find_element_by_xpath("//button[@type='submit']")
+        button_login = browser.find_element(By.XPATH, "//button[@type='submit']")
         button_login.click()
         sleep(2)
     except ValueError as e:
@@ -127,15 +128,16 @@ def comment():
             access_page_comment()
             sleep(3)
         try:
-            browser.find_element_by_class_name('Ypffh').click()
-            comment_field = browser.find_element_by_class_name('Ypffh')
+            browser.find_element(By.XPATH, "//textarea[@placeholder='Adicione um comentário...']").click()
+            comment_field = browser.find_element(By.XPATH, "//textarea[@placeholder='Adicione um comentário...']")
             text = ''
             while text == '':
                 text = comments[randint(0, len(comments) - 1)]
                 if login_user in text:
                     text = ''
             type_like_a_person(number_comments + 1, loaded_page, text, comment_field)
-            browser.find_element_by_xpath("//button[contains(text(), 'Publicar')]").click()
+            button_postar = browser.find_element(By.XPATH, "//div[@role='button'][.//span[text()='Postar']]")
+            button_postar.click()            
         except ValueError as err:
             number_comments -= 1    # Considerando que o comentário anterior também deu erro
             write_number_comment()
